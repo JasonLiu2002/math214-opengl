@@ -97,7 +97,7 @@ void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::ve
         } else if (type == 'f') {
             int v1, v2, v3;
             file >> v1 >> v2 >> v3;
-            out_faces.emplace_back(v1, v2, v3);
+            out_faces.emplace_back(v1 - 1, v2 - 1, v3 - 1);
         }
     }
 }
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
         GLuint modelHandle = glGetUniformLocation(programHandle, "model");
         GLuint viewHandle = glGetUniformLocation(programHandle, "view");
         GLuint projectionHandle = glGetUniformLocation(programHandle, "projection");
-        [[maybe_unused]] GLuint lightPositionHandle = glGetUniformLocation(programHandle, "lightPosition");
+        GLuint lightPositionHandle = glGetUniformLocation(programHandle, "lightPosition");
         GLuint viewPositionHandle = glGetUniformLocation(programHandle, "viewPosition");
         GLuint lightColorHandle = glGetUniformLocation(programHandle, "lightColor");
         GLuint objectColorHandle = glGetUniformLocation(programHandle, "objectColor");
@@ -180,17 +180,26 @@ int main(int argc, char** argv) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glm::mat4 model = calculateModelMatrix();
-            glm::mat4 view = calculateViewMatrix(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+            glm::mat4 view = calculateViewMatrix({0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
             float aspect = static_cast<float>(WIDTH) / HEIGHT;
             glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
-            view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+            glm::vec3 cameraPosition{0.0f, 0.0f, 10.0f};
+            view = glm::lookAt(cameraPosition, {0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
             projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
             glUseProgram(programHandle);
             glUniformMatrix4fv(modelHandle, 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(viewHandle, 1, GL_FALSE, glm::value_ptr(view));
             glUniformMatrix4fv(projectionHandle, 1, GL_FALSE, glm::value_ptr(projection));
+
+            glUniform3fv(lightPositionHandle, 1, glm::value_ptr(cameraPosition));
+            glm::vec3 viewPosition{0.0f, 0.0f, 5.0f};
+            glUniform3fv(viewPositionHandle, 1, glm::value_ptr(viewPosition));
+            glm::vec3 lightColor{1.0f, 1.0f, 1.0f};
+            glUniform3fv(lightColorHandle, 1, glm::value_ptr(lightColor));
+            glm::vec3 objectColor{1.0f, 0.2f, 0.2f};
+            glUniform3fv(objectColorHandle, 1, glm::value_ptr(objectColor));
 
             glEnableVertexAttribArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
