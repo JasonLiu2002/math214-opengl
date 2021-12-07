@@ -14,6 +14,10 @@
 
 namespace fs = std::filesystem;
 
+const static int WIDTH = 1024;
+const static int HEIGHT = 768;
+const static float SENS = 0.004f;
+
 void printMat4(glm::mat4 &mat) {
     for(int i = 0; i < 4; ++i) {
         for(int j = 0; j < 4; ++j) {
@@ -66,7 +70,6 @@ GLuint compileShader(fs::path const& path, GLenum shaderType) {
 
 glm::mat4 calculateProjectionMatrix(float fovY, float aspect, float zNear, float zFar) {
     float tanHalfFovY = tan(fovY / 2.0f);
-
     glm::mat4 proj(0.0f);
     proj[0][0] = 1.0f / (aspect * tanHalfFovY);
     proj[1][1] = 1.0f / (tanHalfFovY);
@@ -127,40 +130,43 @@ void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::ve
     }
 }
 
+GLFWwindow* setup() {
+    // Initializing GLFW
+    if (!glfwInit()) {
+        throw std::runtime_error("Failed to initialize GLFW");
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+    // Create a 1024x768 window
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Math 214 OpenGL", nullptr, nullptr);
+    if (!window) {
+        glfwTerminate();
+        throw std::runtime_error("Failed to open GLFW window");
+    }
+    glfwMakeContextCurrent(window);
+
+    // Initializing GLEW
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        throw std::runtime_error("Failed to initialize GLEW");
+    }
+
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    glfwPollEvents();
+    glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
+
+    return window;
+}
+
 int main(int argc, char** argv) {
     try {
-        const static int WIDTH = 1024;
-        const static int HEIGHT = 768;
-
-        // Initializing GLFW
-        if (!glfwInit()) {
-            throw std::runtime_error("Failed to initialize GLFW");
-        }
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-        glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
-        // Create a 1024x768 window
-        GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Math 214 OpenGL", nullptr, nullptr);
-        if (!window) {
-            glfwTerminate();
-            throw std::runtime_error("Failed to open GLFW window");
-        }
-        glfwMakeContextCurrent(window);
-
-        // Initializing GLEW
-        glewExperimental = GL_TRUE;
-        if (glewInit() != GLEW_OK) {
-            throw std::runtime_error("Failed to initialize GLEW");
-        }
-
-        glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-        glfwPollEvents();
-        glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
+        GLFWwindow* window = setup();
 
         // Loading the Utah teapot
         std::vector<glm::vec3> vertices;
@@ -202,8 +208,7 @@ int main(int argc, char** argv) {
         glm::mat4 view = calculateViewMatrix(cameraPosition, target, cameraUp);
         glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
-
-        const static float SENS = 0.004f;
+        // Used for mouse movements
         double posx, posy;
         float dx, dy;
 
