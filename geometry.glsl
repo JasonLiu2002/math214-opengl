@@ -1,7 +1,7 @@
 #version 330
 
 layout(triangles) in;
-in vec3 fragmentPositions[];
+in vec3 fragmentPositions[3];
 
 layout(triangle_strip, max_vertices=3) out;
 out vec3 fragmentPosition, normal;
@@ -14,8 +14,8 @@ void main()
     for (int i = 0; i < gl_in.length(); ++i)
     {
         gl_Position = gl_in[i].gl_Position;
-        normal = N;
         fragmentPosition = fragmentPositions[i];
+        normal = N;
         EmitVertex();
     }
     EndPrimitive();

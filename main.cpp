@@ -83,7 +83,7 @@ glm::mat4 calculateModelMatrix() {
     return glm::mat4(1.0);
 }
 
-void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::vector<glm::ivec3>& out_faces) {
+void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::vector<glm::uvec3>& out_faces) {
     std::ifstream file(path);
     if (!file) {
         throw std::runtime_error("Failed to read file");
@@ -95,7 +95,7 @@ void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::ve
             file >> x >> y >> z;
             out_vertices.emplace_back(x, y, z);
         } else if (type == 'f') {
-            int v1, v2, v3;
+            unsigned int v1, v2, v3;
             file >> v1 >> v2 >> v3;
             out_faces.emplace_back(v1 - 1, v2 - 1, v3 - 1);
         }
@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
 
         // Loading the Utah teapot
         std::vector<glm::vec3> vertices;
-        std::vector<glm::ivec3> faces;
+        std::vector<glm::uvec3> faces;
         loadObj("teapot.obj", vertices, faces);
 
         GLuint vertexShaderHandle = compileShader("vertex.glsl", GL_VERTEX_SHADER);
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
 
-            glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_SHORT, nullptr);
+            glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, nullptr);
 
             glDisableVertexAttribArray(0);
 
