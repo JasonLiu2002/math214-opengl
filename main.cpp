@@ -30,6 +30,9 @@ GLuint linkShaders(GLuint vertexShaderHandle, GLuint fragmentShaderHandle) {
 
 GLuint compileShader(fs::path const& path, GLenum shaderType) {
     std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("Failed to read file");
+    }
     std::stringstream stream;
     stream << file.rdbuf();
     std::string shaderSource = stream.str();
@@ -49,6 +52,9 @@ GLuint compileShader(fs::path const& path, GLenum shaderType) {
 
 void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::vector<glm::ivec3>& out_faces) {
     std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("Failed to read file");
+    }
     char type;
     while (file >> type) {
         if (type == 'v') {
@@ -68,7 +74,7 @@ int main(int argc, char** argv) {
     const static int HEIGHT = 768;
 
     // Initializing GLFW
-    if(!glfwInit()) {
+    if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return 1;
     }
@@ -98,44 +104,69 @@ int main(int argc, char** argv) {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwPollEvents();
-    glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+    glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
 
     // Loading the Utah teapot
-    std::vector<glm::vec3> outVertices;
-    std::vector<glm::ivec3> outFaces;
-    loadObj("teapot.obj", outVertices, outFaces);
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::ivec3> faces;
+    loadObj("teapot.obj", vertices, faces);
 
-//    GLuint vertexShaderHandle = compileShader("vertex.glsl", GL_VERTEX_SHADER);
-//    GLuint fragmentShaderHandle = compileShader("fragment.glsl", GL_FRAGMENT_SHADER);
-//    GLuint programHandle = linkShaders(vertexShaderHandle, fragmentShaderHandle);
+    GLuint vertexShaderHandle = compileShader("vertex.glsl", GL_VERTEX_SHADER);
+    GLuint fragmentShaderHandle = compileShader("fragment.glsl", GL_FRAGMENT_SHADER);
+    GLuint programHandle = linkShaders(vertexShaderHandle, fragmentShaderHandle);
 
-    GLuint vertexBuffer;
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, outVertices.size() * sizeof(glm::vec3), &outVertices[0], GL_STATIC_DRAW);
+    GLuint modelHandle = glGetUniformLocation(programHandle, "model");
+    GLuint viewHandle = glGetUniformLocation(programHandle, "view");
+    GLuint projectionHandle = glGetUniformLocation(programHandle, "projection");
 
-    GLuint faceBuffer;
-    glGenBuffers(1, &faceBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, faceBuffer);
-    glBufferData(GL_ARRAY_BUFFER, outFaces.size() * sizeof(glm::vec3), &outFaces[0], GL_STATIC_DRAW);
+    GLuint vertexArrayHandle;
+    glGenVertexArrays(1, &vertexArrayHandle);
+    glBindVertexArray(vertexArrayHandle);
+
+    GLuint vertexBufferHandle;
+    glGenBuffers(1, &vertexBufferHandle);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(decltype(vertices)::value_type), vertices.data(), GL_STATIC_DRAW);
+
+    GLuint elementBufferHandle;
+    glGenBuffers(1, &elementBufferHandle);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(decltype(faces)::value_type), faces.data(), GL_STATIC_DRAW);
 
     while (!glfwWindowShouldClose(window)) {
         if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
             break;
         }
-        // Check for mouse/key movements
-        glfwPollEvents();
-        // Clear color buffer
         glClearColor(0.1765f, 0.1647f, 0.1804f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Calculate MVP from inputs
+        // TODO: calculate
+        glm::mat4 model, view, projection;
 
+        glUseProgram(programHandle);
+        glUniformMatrix4fv(modelHandle, 1, GL_FALSE, &model[0][0]);
+        glUniformMatrix4fv(viewHandle, 1, GL_FALSE, &view[0][0]);
+        glUniformMatrix4fv(projectionHandle, 1, GL_FALSE, &projection[0][0]);
 
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
+
+        glDisableVertexAttribArray(0);
 
         // Draw
+        glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_SHORT, nullptr);
         glfwSwapBuffers(window);
+        // Check for mouse/key movements
+        glfwPollEvents();
     }
+
+    glDeleteBuffers(1, &vertexBufferHandle);
+    glDeleteBuffers(1, &elementBufferHandle);
+    glDeleteProgram(programHandle);
+    glDeleteVertexArrays(1, &vertexArrayHandle);
 
     glfwTerminate();
     return 0;
