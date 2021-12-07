@@ -126,8 +126,7 @@ int main(int argc, char** argv) {
 
         // Initializing GLFW
         if (!glfwInit()) {
-            std::cerr << "Failed to initialize GLFW\n";
-            return 1;
+            throw std::runtime_error("Failed to initialize GLFW");
         }
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -138,17 +137,15 @@ int main(int argc, char** argv) {
         // Create a 1024x768 window
         GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Math 214 OpenGL", nullptr, nullptr);
         if (!window) {
-            std::cerr << "Failed to open GLFW window\n";
             glfwTerminate();
-            return 1;
+            throw std::runtime_error("Failed to open GLFW window");
         }
         glfwMakeContextCurrent(window);
 
         // Initializing GLEW
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK) {
-            std::cerr << "Failed to initialize GLEW\n";
-            return 1;
+            throw std::runtime_error("Failed to initialize GLEW");
         }
 
         glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
@@ -200,7 +197,19 @@ int main(int argc, char** argv) {
                 break;
             }
             glClearColor(0.1765f, 0.1647f, 0.1804f, 1.0f);
+            glEnable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            glDepthFunc(GL_LESS);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glm::mat4 model = calculateModelMatrix();
+            glm::mat4 view = calculateViewMatrix({0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
+            float aspect = static_cast<float>(WIDTH) / HEIGHT;
+            glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+
+            glm::vec3 cameraPosition{10.0f, 1.0f, 10.0f}, target{0.0f, 0.0f, 0.0f};
+            view = glm::lookAt(cameraPosition, target, {0.0f, 1.0f, 0.0f});
+            projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
             glUseProgram(programHandle);
             glUniformMatrix4fv(modelHandle, 1, GL_FALSE, glm::value_ptr(model));
@@ -221,6 +230,7 @@ int main(int argc, char** argv) {
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
 
+//            glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
             glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, nullptr);
 
             glDisableVertexAttribArray(0);
