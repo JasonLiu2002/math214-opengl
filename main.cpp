@@ -9,6 +9,7 @@
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 namespace fs = std::filesystem;
 
@@ -188,10 +189,16 @@ int main(int argc, char** argv) {
 
         float aspect = static_cast<float>(WIDTH) / HEIGHT;
         glm::vec3 cameraPosition{10.0f, 5.0f, 10.0f};
+        glm::vec3 cameraUp{0.0f, 1.0f, 0.0f};
         glm::mat4 model = calculateModelMatrix();
         glm::vec3 target{0.0f, 0.0f, 0.0f};
-        glm::mat4 view = calculateViewMatrix(cameraPosition, target, {0.0f, 1.0f, 0.0f});
+        glm::mat4 view = calculateViewMatrix(cameraPosition, target, cameraUp);
         glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+
+
+        const static float SENS = 0.004f;
+        double posx, posy;
+        float dx, dy;
 
         while (!glfwWindowShouldClose(window)) {
             if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
@@ -202,6 +209,17 @@ int main(int argc, char** argv) {
             glDisable(GL_CULL_FACE);
             glDepthFunc(GL_LESS);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+            glfwGetCursorPos(window, &posx, &posy);
+            dx = -1* (posx - WIDTH / 2);
+            dy = posy - HEIGHT / 2;
+            cameraUp = glm::rotate(cameraUp, SENS * dy, glm::cross(cameraPosition - target, cameraUp));
+            cameraPosition = glm::rotate(cameraPosition - target, SENS * dy, glm::cross(cameraPosition - target, cameraUp)) + target;
+            cameraUp = glm::rotate(cameraUp, SENS * dx, glm::vec3(0.0f, 1.0f, 0.0f));
+            cameraPosition = glm::rotate(cameraPosition - target, SENS * dx, glm::vec3(0.0f, 1.0f, 0.0f)) + target;
+            view = calculateViewMatrix(cameraPosition, target, cameraUp);
+            glfwSetCursorPos(window, WIDTH / 2, HEIGHT / 2);
 
             glUseProgram(programHandle);
             glUniformMatrix4fv(modelHandle, 1, GL_FALSE, glm::value_ptr(model));
