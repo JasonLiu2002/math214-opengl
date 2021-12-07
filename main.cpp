@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(decltype(faces)::value_type), faces.data(), GL_STATIC_DRAW);
 
         float aspect = static_cast<float>(WIDTH) / HEIGHT;
-        glm::vec3 cameraPosition{0.0f, 0.0f, 10.0f};
+        glm::vec3 cameraPosition{10.0f, 5.0f, 10.0f};
         glm::mat4 model = calculateModelMatrix();
         glm::vec3 target{0.0f, 0.0f, 0.0f};
         glm::mat4 view = calculateViewMatrix(cameraPosition, target, {0.0f, 1.0f, 0.0f});
