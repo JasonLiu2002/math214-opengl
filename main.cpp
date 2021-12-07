@@ -171,10 +171,9 @@ int main(int argc, char** argv) {
         }
         glClearColor(0.1765f, 0.1647f, 0.1804f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // TODO: calculate
+        
         glm::mat4 model = calculateModelMatrix();
-        glm::mat4 view = calculateViewMatrix();
+        glm::mat4 view = calculateViewMatrix(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
         float aspect = static_cast<float>(WIDTH) / HEIGHT;
         glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
