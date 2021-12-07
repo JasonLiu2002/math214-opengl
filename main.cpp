@@ -12,6 +12,15 @@
 
 namespace fs = std::filesystem;
 
+//void printMat4(glm::mat4 &mat) {
+//    for(int i = 0; i < 4; ++i) {
+//        for(int j = 0; j < 4; ++j) {
+//            std::cout << mat[i][j] << "\t";
+//        }
+//        std::cout << "\n";
+//    }
+//}
+
 GLuint linkShaders(std::vector<GLuint> const& shaderHandles) {
     GLuint programHandle = glCreateProgram();
     for (GLuint handle: shaderHandles)
@@ -65,17 +74,25 @@ glm::mat4 calculateProjectionMatrix(float fovY, float aspect, float zNear, float
 }
 
 glm::mat4 calculateViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up) {
-    glm::vec3 direction = target - position;
-    glm::vec3 right = glm::cross(direction, up);
-    glm::mat4 camera;
-    camera[0] = glm::vec4(right, 0.0f);
-    camera[1] = glm::vec4(up, 0.0f);
-    camera[2] = glm::vec4(direction, 0.0f);
-    camera[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    camera = glm::transpose(camera);
-    glm::mat4 cameraPos(1.0f);
-    cameraPos[3] = glm::vec4(-1.0f * position, 1.0f);
-    return camera * cameraPos;
+    glm::vec3 direction = glm::normalize(target - position);
+    up = glm::normalize(up);
+    glm::vec3 right = glm::normalize(glm::cross(direction, up));
+    up = cross(right, direction);
+    // Instead of doing the matrix multiplication, manually calculate for speed;
+    glm::mat4 view(1.0f);
+    view[0][0] = right.x;
+    view[1][0] = right.y;
+    view[2][0] = right.z;
+    view[0][1] = up.x;
+    view[1][1] = up.y;
+    view[2][1] = up.z;
+    view[0][2] =-direction.x;
+    view[1][2] =-direction.y;
+    view[2][2] =-direction.z;
+    view[3][0] =-glm::dot(right, position);
+    view[3][1] =-glm::dot(up, position);
+    view[3][2] = glm::dot(direction, position);
+    return view;
 }
 
 // TODO: Implement transformations on the model
@@ -172,21 +189,18 @@ int main(int argc, char** argv) {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(decltype(faces)::value_type), faces.data(), GL_STATIC_DRAW);
 
+        float aspect = static_cast<float>(WIDTH) / HEIGHT;
+        glm::vec3 cameraPosition{0.0f, 0.0f, 10.0f};
+        glm::mat4 model = calculateModelMatrix();
+        glm::mat4 view = calculateViewMatrix(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+        glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+
         while (!glfwWindowShouldClose(window)) {
             if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
                 break;
             }
             glClearColor(0.1765f, 0.1647f, 0.1804f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glm::mat4 model = calculateModelMatrix();
-            glm::mat4 view = calculateViewMatrix({0.0f, 0.0f, 5.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
-            float aspect = static_cast<float>(WIDTH) / HEIGHT;
-            glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
-
-            glm::vec3 cameraPosition{0.0f, 0.0f, 10.0f};
-            view = glm::lookAt(cameraPosition, {0.0f, 0.0f, 0.0f}, {0.0f, -1.0f, 0.0f});
-            projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
             glUseProgram(programHandle);
             glUniformMatrix4fv(modelHandle, 1, GL_FALSE, glm::value_ptr(model));
