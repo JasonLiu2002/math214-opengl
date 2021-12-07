@@ -94,14 +94,44 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    glViewport(0, 0, WIDTH, HEIGHT);
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    glfwPollEvents();
+    glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+
+    // Loading the Utah teapot
+    std::vector<glm::vec3> outVertices;
+    std::vector<glm::ivec3> outFaces;
+    loadObj("teapot.obj", outVertices, outFaces);
+
+//    GLuint vertexShaderHandle = compileShader("vertex.glsl", GL_VERTEX_SHADER);
+//    GLuint fragmentShaderHandle = compileShader("fragment.glsl", GL_FRAGMENT_SHADER);
+//    GLuint programHandle = linkShaders(vertexShaderHandle, fragmentShaderHandle);
+
+    GLuint vertexBuffer;
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, outVertices.size() * sizeof(glm::vec3), &outVertices[0], GL_STATIC_DRAW);
+
+    GLuint faceBuffer;
+    glGenBuffers(1, &faceBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, faceBuffer);
+    glBufferData(GL_ARRAY_BUFFER, outFaces.size() * sizeof(glm::vec3), &outFaces[0], GL_STATIC_DRAW);
+
     while (!glfwWindowShouldClose(window)) {
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+            break;
+        }
         // Check for mouse/key movements
         glfwPollEvents();
-
         // Clear color buffer
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.1765f, 0.1647f, 0.1804f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Calculate MVP from inputs
+
+
 
         // Draw
         glfwSwapBuffers(window);
