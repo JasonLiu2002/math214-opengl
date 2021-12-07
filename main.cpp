@@ -5,8 +5,9 @@
 #include <iostream>
 #include <filesystem>
 
+#include <gl/glew.h>
+#include <glfw/glfw3.h>
 #include <glm/glm.hpp>
-#include <GLUT/glut.h>
 
 namespace fs = std::filesystem;
 
@@ -62,28 +63,50 @@ void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::ve
     }
 }
 
-void renderScene() {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glutSwapBuffers();
-}
-
 int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_3_2_CORE_PROFILE);
-    glutInitWindowSize(960, 514);
-    glutInitWindowPosition(200, 200);
-    glutCreateWindow("Math 214 OpenGL");
+    const static int WIDTH = 1024;
+    const static int HEIGHT = 768;
 
-    std::vector<glm::vec3> out_vertices;
-    std::vector<glm::ivec3> out_faces;
-    loadObj("teapot.obj", out_vertices, out_faces);
+    // Initializing GLFW
+    if(!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW\n";
+        return 1;
+    }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    GLuint vertexShaderHandle = compileShader("vertex.glsl", GL_VERTEX_SHADER);
-    GLuint fragmentShaderHandle = compileShader("fragment.glsl", GL_FRAGMENT_SHADER);
-    GLuint programHandle = linkShaders(vertexShaderHandle, fragmentShaderHandle);
+    // Create a 1024x768 window
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Math 214 OpenGL", nullptr, nullptr);
+    if (!window) {
+        std::cerr << "Failed to open GLFW window\n";
+        glfwTerminate();
+        return 1;
+    }
+    glfwMakeContextCurrent(window);
 
-    glutDisplayFunc(renderScene);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glutMainLoop();
+    // Initializing GLEW
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW\n";
+        return 1;
+    }
+
+    glViewport(0, 0, WIDTH, HEIGHT);
+    while (!glfwWindowShouldClose(window)) {
+        // Check for mouse/key movements
+        glfwPollEvents();
+
+        // Clear color buffer
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Draw
+        glfwSwapBuffers(window);
+    }
+
+    glfwTerminate();
     return 0;
 }
