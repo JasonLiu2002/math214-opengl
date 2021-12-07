@@ -8,6 +8,7 @@
 #include <gl/glew.h>
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace fs = std::filesystem;
 
@@ -50,7 +51,7 @@ GLuint compileShader(fs::path const& path, GLenum shaderType) {
     return shaderHandle;
 }
 
-glm::mat4 calculateProjection(float fovY, float aspect, float zNear, float zFar) {
+glm::mat4 calculateProjectionMatrix(float fovY, float aspect, float zNear, float zFar) {
     float tanHalfFovY = tan(fovY / 2.0f);
 
     glm::mat4 proj(0.0f);
@@ -172,14 +173,15 @@ int main(int argc, char** argv) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // TODO: calculate
-        glm::mat4 model, view, projection;
-
-        projection = calculateProjection(glm::radians(45.0f), static_cast<float>(WIDTH) / HEIGHT, 0.1f, 100.0f);
+        glm::mat4 model = calculateModelMatrix();
+        glm::mat4 view = calculateViewMatrix();
+        float aspect = static_cast<float>(WIDTH) / HEIGHT;
+        glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
         glUseProgram(programHandle);
-        glUniformMatrix4fv(modelHandle, 1, GL_FALSE, &model[0][0]);
-        glUniformMatrix4fv(viewHandle, 1, GL_FALSE, &view[0][0]);
-        glUniformMatrix4fv(projectionHandle, 1, GL_FALSE, &projection[0][0]);
+        glUniformMatrix4fv(modelHandle, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewHandle, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projectionHandle, 1, GL_FALSE, glm::value_ptr(projection));
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexBufferHandle);
