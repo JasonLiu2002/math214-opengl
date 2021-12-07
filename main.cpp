@@ -8,7 +8,6 @@
 #include <gl/glew.h>
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace fs = std::filesystem;
 
@@ -51,6 +50,37 @@ GLuint compileShader(fs::path const& path, GLenum shaderType) {
     return shaderHandle;
 }
 
+glm::mat4 calculateProjection(float fovY, float aspect, float zNear, float zFar) {
+    float tanHalfFovY = tan(fovY / 2.0f);
+
+    glm::mat4 proj(0.0f);
+    proj[0][0] = 1.0f / (aspect * tanHalfFovY);
+    proj[1][1] = 1.0f / (tanHalfFovY);
+    proj[2][2] = -(zFar + zNear) / (zFar - zNear);
+    proj[2][3] = -1.0f;
+    proj[3][2] = -(2.0f * zFar * zNear) / (zFar - zNear);
+    return proj;
+}
+
+glm::mat4 calculateViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up) {
+    glm::vec3 direction = target - position;
+    glm::vec3 right = glm::cross(direction, up);
+    glm::mat4 camera;
+    camera[0] = glm::vec4(right, 0.0f);
+    camera[1] = glm::vec4(up, 0.0f);
+    camera[2] = glm::vec4(direction, 0.0f);
+    camera[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    camera = glm::transpose(camera);
+    glm::mat4 cameraPos(1.0f);
+    cameraPos[3] = glm::vec4(-1.0f * position, 1.0f);
+    return camera * cameraPos;
+}
+
+// TODO: Implement transformations on the model
+glm::mat4 calculateModelMatrix() {
+    return glm::mat4(1.0);
+}
+
 void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::vector<glm::ivec3>& out_faces) {
     std::ifstream file(path);
     if (!file) {
@@ -68,18 +98,6 @@ void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::ve
             out_faces.emplace_back(v1, v2, v3);
         }
     }
-}
-
-glm::mat4 calculateProjection(float fovY, float aspect, float zNear, float zFar) {
-    float tanHalfFovY = tan(fovY / 2.0f);
-
-    glm::mat4 proj(0.0f);
-    proj[0][0] = 1.0f / (aspect * tanHalfFovY);
-    proj[1][1] = 1.0f / (tanHalfFovY);
-    proj[2][2] = -(zFar + zNear) / (zFar - zNear);
-    proj[2][3] = -1.0f;
-    proj[3][2] = -(2.0f * zFar * zNear) / (zFar - zNear);
-    return proj;
 }
 
 int main(int argc, char** argv) {
