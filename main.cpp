@@ -86,11 +86,11 @@ glm::mat4 calculateViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up
     view[0][1] = up.x;
     view[1][1] = up.y;
     view[2][1] = up.z;
-    view[0][2] =-direction.x;
-    view[1][2] =-direction.y;
-    view[2][2] =-direction.z;
-    view[3][0] =-glm::dot(right, position);
-    view[3][1] =-glm::dot(up, position);
+    view[0][2] = -direction.x;
+    view[1][2] = -direction.y;
+    view[2][2] = -direction.z;
+    view[3][0] = -glm::dot(right, position);
+    view[3][1] = -glm::dot(up, position);
     view[3][2] = glm::dot(direction, position);
     return view;
 }
@@ -189,7 +189,8 @@ int main(int argc, char** argv) {
         float aspect = static_cast<float>(WIDTH) / HEIGHT;
         glm::vec3 cameraPosition{0.0f, 0.0f, 10.0f};
         glm::mat4 model = calculateModelMatrix();
-        glm::mat4 view = calculateViewMatrix(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f));
+        glm::vec3 target{0.0f, 0.0f, 0.0f};
+        glm::mat4 view = calculateViewMatrix(cameraPosition, target, {0.0f, 1.0f, 0.0f});
         glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
         while (!glfwWindowShouldClose(window)) {
@@ -201,12 +202,6 @@ int main(int argc, char** argv) {
             glDisable(GL_CULL_FACE);
             glDepthFunc(GL_LESS);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glm::vec3 cameraPosition{10.0f, 1.0f, 10.0f}, target{0.0f, 0.0f, 0.0f};
-            glm::mat4 model = calculateModelMatrix();
-            glm::mat4 view = calculateViewMatrix(cameraPosition, target, {0.0f, 1.0f, 0.0f});
-            float aspect = static_cast<float>(WIDTH) / HEIGHT;
-            glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
 
             glUseProgram(programHandle);
             glUniformMatrix4fv(modelHandle, 1, GL_FALSE, glm::value_ptr(model));
@@ -228,7 +223,7 @@ int main(int argc, char** argv) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
 
 //            glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
-            glDrawElements(GL_TRIANGLES, faces.size() * 12, GL_UNSIGNED_INT, nullptr);
+            glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, nullptr);
 
             glDisableVertexAttribArray(0);
 
