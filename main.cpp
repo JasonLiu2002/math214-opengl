@@ -10,17 +10,19 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace fs = std::filesystem;
 
-//void printMat4(glm::mat4 &mat) {
-//    for(int i = 0; i < 4; ++i) {
-//        for(int j = 0; j < 4; ++j) {
-//            std::cout << mat[i][j] << "\t";
-//        }
-//        std::cout << "\n";
-//    }
-//}
+void printMat4(glm::mat4 &mat) {
+    for(int i = 0; i < 4; ++i) {
+        for(int j = 0; j < 4; ++j) {
+            std::cout << mat[i][j] << "\t";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "\n";
+}
 
 GLuint linkShaders(std::vector<GLuint> const& shaderHandles) {
     GLuint programHandle = glCreateProgram();
@@ -96,9 +98,14 @@ glm::mat4 calculateViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up
     return view;
 }
 
-// TODO: Implement transformations on the model
-glm::mat4 calculateModelMatrix() {
-    return glm::mat4(1.0);
+// Scale, rotate, then translate
+glm::mat4 calculateModelMatrix(glm::vec3 translateVector, float scaleFactor, glm::vec3 rotateVector) {
+    glm::mat4 scale(scaleFactor);
+    scale[3][3] = 1;
+    glm::mat4 rotation = toMat4(glm::quat(rotateVector));
+    glm::mat4 translation(1.0f);
+    translation[3] = glm::vec4(translateVector, 1.0f);
+    return translation * rotation * scale;
 }
 
 void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::vector<glm::uvec3>& out_faces) {
@@ -190,7 +197,7 @@ int main(int argc, char** argv) {
         float aspect = static_cast<float>(WIDTH) / HEIGHT;
         glm::vec3 cameraPosition{10.0f, 5.0f, 10.0f};
         glm::vec3 cameraUp{0.0f, 1.0f, 0.0f};
-        glm::mat4 model = calculateModelMatrix();
+        glm::mat4 model = calculateModelMatrix(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, glm::vec3(0.0f, 0.0f, 0.0f));
         glm::vec3 target{0.0f, 0.0f, 0.0f};
         glm::mat4 view = calculateViewMatrix(cameraPosition, target, cameraUp);
         glm::mat4 projection = calculateProjectionMatrix(glm::radians(45.0f), aspect, 0.1f, 100.0f);
@@ -240,7 +247,6 @@ int main(int argc, char** argv) {
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBufferHandle);
 
-//            glDrawArrays(GL_TRIANGLES, 0, vertices.size() / 3);
             glDrawElements(GL_TRIANGLES, faces.size() * 3, GL_UNSIGNED_INT, nullptr);
 
             glDisableVertexAttribArray(0);
