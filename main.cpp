@@ -8,6 +8,7 @@
 #include <gl/glew.h>
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace fs = std::filesystem;
 
@@ -67,6 +68,18 @@ void loadObj(fs::path const& path, std::vector<glm::vec3>& out_vertices, std::ve
             out_faces.emplace_back(v1, v2, v3);
         }
     }
+}
+
+glm::mat4 calculateProjection(float fovY, float aspect, float zNear, float zFar) {
+    float tanHalfFovY = tan(fovY / 2.0f);
+
+    glm::mat4 proj(0.0f);
+    proj[0][0] = 1.0f / (aspect * tanHalfFovY);
+    proj[1][1] = 1.0f / (tanHalfFovY);
+    proj[2][2] = -(zFar + zNear) / (zFar - zNear);
+    proj[2][3] = -1.0f;
+    proj[3][2] = -(2.0f * zFar * zNear) / (zFar - zNear);
+    return proj;
 }
 
 int main(int argc, char** argv) {
@@ -142,6 +155,8 @@ int main(int argc, char** argv) {
 
         // TODO: calculate
         glm::mat4 model, view, projection;
+
+        projection = calculateProjection(glm::radians(45.0f), static_cast<float>(WIDTH) / HEIGHT, 0.1f, 100.0f);
 
         glUseProgram(programHandle);
         glUniformMatrix4fv(modelHandle, 1, GL_FALSE, &model[0][0]);
