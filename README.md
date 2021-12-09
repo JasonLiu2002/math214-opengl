@@ -6,6 +6,8 @@ The purpose of this project is to investigate computer graphics and linear algeb
 
 This project will cover the different spaces OpenGL uses, its Model View Projection (MVP) matrix, camera manipulation, some basic shaders, and the mathematical operations used.
 
+[Project Poster](poster.pdf)
+
 <img alt="Utah Teapot" src="teapot.png" width="512" height="399"/>
 
 ### Contributors & uniqnames
